@@ -49,4 +49,14 @@ rvm use 2.5.7@bar
 gem list
 foo有rails bar没有
 
-# Rake
+# rail 命令
+bin/rails server
+bin/rails console
+
+bin/rails generate scaffold article
+bin/rails generate model book name:string{20} description:text
+
+bin/rails routes
+
+bin/rails db:create
+bin/rails db:migrate
