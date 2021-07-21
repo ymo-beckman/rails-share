@@ -12,10 +12,11 @@ Ruby版本管理器
 ## JRuby
 纯Java实现的Ruby解释器。启动一个jvm，然后读取ruby脚步并解释执行，jprofiler可以监控Jruby
 
-java -Xmx378m -Xss1024k \
--Druby.home=/Users/moyongfeng/.rvm/rubies/jruby-9.2.14.0 \
--Djruby.lib=/Users/moyongfeng/.rvm/rubies/jruby-9.2.14.0/lib \
-Djruby.script=org.jruby.main hello.rb
+Java 执行jruby
+```
+java -jar $HOME/.rvm/rubies/jruby-9.2.14.0/lib/jruby.jar hello.rb
+
+```
 
 ## 安装一个新版本
 rvm install jruby-9.2.14.0
