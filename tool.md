@@ -51,6 +51,7 @@ gem list
 foo有rails bar没有
 
 # rail 命令
+```
 bin/rails server
 bin/rails console
 
@@ -61,3 +62,4 @@ bin/rails routes
 
 bin/rails db:create
 bin/rails db:migrate
+```
