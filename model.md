@@ -52,18 +52,69 @@ end
 - Changing Existing Migrations
 
 ```
+# 创建
 bin/rails generate model Author
 bin/rails generate model Book
 
 bin/rails db:migrate
 
+# 更改
 bin/rails generate migration AddAuthorRefToBook author:references
 bin/rails generate migration AddNameToBook 'name:string{20}'
 
 bin/rails db:migrate
 
+# 删除列
 bin/rails generate migration RemoveNameFromBook name:string
+
 bin/rails db:migrate
+
+# migration创建表
+bin/rails generate migration CreateTemp2 name:string{20} count:integer
+rake db:migrate
+```
+
+### Migration methods:
+- add_column
+- add_foreign_key
+- add_index
+- add_reference
+- add_timestamps
+- change_column_default (must supply a :from and :to option)
+- change_column_null
+- create_join_table
+- create_table
+- disable_extension
+- drop_join_table
+- drop_table (must supply a block)
+- enable_extension
+- remove_column (must supply a type)
+- remove_foreign_key (must supply a second table)
+- remove_index
+- remove_reference
+- remove_timestamps
+- rename_column
+- rename_index
+- rename_table
+
+如果不够可以些SQL
+
+
+### 运行Migration
+```
+# rollback
+bin/rails db:rollback
+bin/rails db:rollback STEP=3
+
+# reset
+bin/rails db:drop
+bin/rails db:reset
+
+# running specific migration
+bin/rails db:migrate VERSION=20210720060447
+
+# in different env
+bin/rails db:migrate RAILS_ENV=test
 ```
 
 ---
@@ -138,18 +189,303 @@ end
 - has_one :through
 - has_and_belongs_to_many
 
-#### belongs_to:
-- 使用单数关联
-- 单向一对一
-- 要设置
+#### belongs_to（存其他表id）, has_one
+```
+# book belongs to author
+create table authors (
+    id integer auto increment primary key,
+    name varchar(20)
+);
+
+create table books (
+    id integer auto increment primary key,
+    author_id integer
+);
+```
+
+```
+# supplier has one account
+create table suppliers (
+    id integer auto increment primary key,
+    name varchar(20)
+);
+
+create table accounts (
+    id integer auto increment primary key,
+    supplier_id integer
+);
+```
+
+#### has_many
+```
+class Author < ApplicationRecord
+    has_many :books
+end
+
+class Book < ApplicationRecord
+    belongs_to :author
+end
+```
+
+#### has_many :through
+customers <==> orders <==> products
+```
+class Customer < ApplicationRecord
+    has_many :orders
+    has_many :products, through: :orders
+end
+
+class Product < ApplicationRecord
+    has_many :orders
+    has_many :customers, through: :orders
+end
+
+class Order < ApplicationRecord
+    belongs_to :customer
+    belongs_to :product
+end
+
+bin/rails generate model product
+bin/rails generate model customer
+bin/rails generate model order product:references customer:references
+
+bin/rails db:migrate
+```
+
+#### has_one :through
+suppliers <= accounts <= account_histories
+```
+class Supplier < ApplicationRecord
+  has_one :account
+  has_one :account_history, through: :account
+end
+
+class Account < ApplicationRecord
+  belongs_to :supplier
+  has_one :account_history
+end
+
+class AccountHistory < ApplicationRecord
+  belongs_to :account
+end
+
+
+bin/rails g model Supplier
+bin/rails g model Account supplier:references
+bin/rails g model AccountHistory credit_rating:integer account:references
+
+bin/rails db:migrate
+```
+
+#### has_and_belongs_to_many (中间表不需要model对象)
+assemblies <= assemblies_parts => parts
+```
+# models
+class Assembly < ApplicationRecord
+  has_and_belongs_to_many :parts
+end
+
+class Part < ApplicationRecord
+  has_and_belongs_to_many :assemblies
+end
+
+# migrations
+class CreateAssembliesAndParts < ActiveRecord::Migration[6.0]
+  def change
+    create_table :assemblies do |t|
+      t.string :name
+      t.timestamps
+    end
+
+    create_table :parts do |t|
+      t.string :part_number
+      t.timestamps
+    end
+
+    create_table :assemblies_parts, id: false do |t|
+      t.belongs_to :assembly
+      t.belongs_to :part
+    end
+  end
+end
+```
+
+#### Self Joins
+```
+class Employee < ApplicationRecord
+  has_many :subordinates, class_name: "Employee",
+                          foreign_key: "manager_id"
+  belongs_to :manager, class_name: "Employee", optional: true
+end
+```
+
+#### 其他
+- 关联默认作用域是同module
+- 双向关联需要在两个model对象上定义
+- 关联会增加getter, setter, build_*, create_*, create_*!, reload_*六个方法
+- 可以通过where或者select等option 改sql等行为（具体见文档）
+
 
 ---
 ## Query interface
+```
+Customer.find(1)
+
+select * from customers where (customers.id = 10) limit 1
+
+Customer.take
+select * from customers limit 1
+
+Customer.take(2)
+select * from customers limit 2
+
+Customer.first
+select * from customers order by customer.id asc limit 1
+
+Customer.first(3)
+select * from customers order by customer.id asc limit 3
+
+Customer.order(:first_name).first
+select * from customers order by customers.fist_name asc limit 1
+
+Customer.last
+select * from customers order by customer.id desc limit 1
+
+Customer.find_by first_name: 'Foo'
+Customer.where(first_name: 'Foo').take
+select * from customers where (cusotmers.first_name = 'Foo') limit 1
+
+Customer= Customer.find([1, 10])
+select * from customers where (customers.id in (1, 10))
+
+Customer.all.each do |customer|
+    # do something
+end
+
+Customer.find_each do |customer|
+    # do something
+end
+
+# not
+Customer.where.not(orders_count: [1, 3, 5])
+select * from customers where customers.orders_count not in (1, 3, 5)
+
+# or
+Customer.where(last_name: 'Foo').or(Customer.where(orders_count: [1, 3, 5]))
+select * from customers where (customers.last_name = 'Foo' or customers.orders_count in (1, 3, 5))
+
+# ordering
+Customer.order(:created_at)
+# OR
+Customer.order("created_at")
+
+Customer.order(orders_count: :asc, created_at: :desc)
+
+# fields
+Customer.select(:isbn, :out_of_print)
+select isbn, out_of_print from customers
+
+# distinct
+Customer.select(:last_name).distinct
+select distinct last_name from customers
+
+# limit and offset
+Customer.limit(5).offset(30)
+select * from customers limit 5 offset 30
+
+# group
+Customer.select(:created_at).group(:created_at)
+select created_at from customers group by created_by
+
+# count
+Customer.group(:status).count
+select count(*) as count_all, status from customers group by status
+
+# having
+Customer.select("created_at, sum(total) as total_price").group(:created_at).having("sum(total) > ?", 200)
+select created_at, sum(total) as total_price from orders group by created_at having sum(total) > 200
+
+# start: 2000, finish: 10000
+Customer.where(name: 'Foo').find_each(start: 2000, batch_size: 1000) do |customer|
+    # do something
+end
+
+Customer.find_in_batches(batch_size: 2500, start: 5000) do |customer|
+    # do something
+end
+```
+
+### 悲观锁
+```
+Customer.transaction do
+    customer = Customer.lock.first
+    customer.total = 100
+    customer.save!
+end
+
+Customer.transaction do
+    customer = Customer.lock().find(1)
+    ...
+end
+
+customer = Customer.first
+customer.with_lock do
+    ...
+end
+
+```
+
+### join
+#### join with sql
+```
+Author.joins("INNER JOIN books ON books.author_id = authors.id AND books.out_of_print = FALSE")
+
+SELECT authors.* FROM authors INNER JOIN books ON books.author_id = authors.id AND books.out_of_print = FALSE
+```
+
+#### join with associations
+```
+Book.joins(:reviews)
+SELECT books.* FROM books INNER JOIN reviews ON reviews.book_id = books.id
+
+Book.joins(:author, :reviews)
+SELECT books.* FROM books
+  INNER JOIN authors ON authors.id = books.author_id
+  INNER JOIN reviews ON reviews.book_id = books.id
+
+# 嵌套
+Book.joins(reviews: :customer)
+
+SELECT books.* FROM books
+  INNER JOIN reviews ON reviews.book_id = books.id
+  INNER JOIN customers ON customers.id = reviews.customer_id
+
+```
+
+#### Enums
+```
+class Order < ApplicationRecord
+  enum status: [:shipped, :being_packaged, :complete, :cancelled]
+end
+```
+
+#### Calculation
+- count
+- average
+- minimum
+- maximum
+- sum
+
+#### 执行计划
+```
+Customer.where(id: 1).joins(:orders).explain
+```
+
+
 
 ---
 
 ## Callbacks
-
 ### Life cycle
 - created
 - updated

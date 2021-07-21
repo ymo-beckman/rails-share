@@ -1,5 +1,6 @@
 # Template
 - erb
+- haml
 - builder (xml)
 - jbuilder (json)
 
@@ -33,6 +34,68 @@
 
 <div class='box'>
   <%= yield %>
+</div>
+```
+
+# haml
+## erb => haml
+```
+# erb
+<strong><%= item.title %></strong>
+
+# haml
+%strong= item.title
+```
+## attributes
+```
+# html
+<strong class="code" id="message">Hello, World!</strong>
+
+# haml
+%strong{:class => "code", :id => "message"} Hello, World!
+```
+
+## 默认标签是div
+```
+# haml
+.content Hello, World!
+
+#html
+<div class='content'>Hello, World!</div>
+```
+## 变量
+```
+# erb
+<div class='item' id='item<%= item.id %>'>
+  <%= item.body %>
+</div>
+
+# haml
+.item{:id => "item#{item.id}"}= item.body
+```
+
+## 使用partial
+```
+# erb
+<div id='content'>
+  <div class='left column'>
+    <h2>Welcome to our site!</h2>
+    <p><%= print_information %></p>
+  </div>
+  <div class="right column">
+    <%= render :partial => "sidebar" %>
+  </div>
+</div>
+
+# haml
+<div id='content'>
+  <div class='left column'>
+    <h2>Welcome to our site!</h2>
+    <p><%= print_information %></p>
+  </div>
+  <div class="right column">
+    <%= render :partial => "sidebar" %>
+  </div>
 </div>
 ```
 
