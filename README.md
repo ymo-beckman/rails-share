@@ -1,4 +1,28 @@
-目录:
+内容:
 - 架构
+    - 架构图
+    - 工作流
+    - 目录结构
 - 工具链
+    - rvm
+    - gemset
+    - rails
+    - jruby
 - MVC
+    - model
+        - ActiveRecord
+        - Migration
+        - Basic CRUD
+        - Associations
+        - Query interface
+        - Callbacks
+        - Validations
+    - controller
+        - 配置路由
+        - 参数
+        - Filter
+        - Request, Response对象
+    - view
+        - Template
+        - Partials
+        - Layout
