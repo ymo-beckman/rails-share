@@ -19,35 +19,50 @@ java -jar $HOME/.rvm/rubies/jruby-9.2.14.0/lib/jruby.jar hello.rb
 ```
 
 ## 安装一个新版本
+ ```
 rvm install jruby-9.2.14.0
+```
 
 ## 新安装一个Ruby版本会创建default和global两个版本
+```
 rvm gemset list
+```
 
 ## 切换版本(可查看gemset路径)
+```
 rvm use 2.5.7
 rvm use jruby-9.2.14.0@cytobank
+```
 
 ## 查看gemset依赖
+```
 gem list
+```
 
 # 例子 foobar项目
 ## 安装Ruby 2.5.7
+```
 rvm install 2.5.7
 rvm use 2.5.7
+```
 
 ## 创建gemset
+```
 rvm gemset create foo
 rvm gemset create bar
 rvm use 2.5.7@foo
 gem list
+```
 
 ## 安装rails
+```
 gem install rails
 gem list
 
 rvm use 2.5.7@bar
 gem list
+```
+
 foo有rails bar没有
 
 # rail 命令
